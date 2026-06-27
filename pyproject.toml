@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "template-studio"
+version = "1.0.0"
+description = "A render/validate/probe/diff/golden/security toolkit for LLM chat templates - the companion code for The Chat Templates Handbook."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Ranjan Kumar" }]
+license = { text = "MIT" }
+dependencies = [
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+# Needed only to render with a real tokenizer/processor (render, anatomy, live golden).
+live = ["transformers>=4.5"]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://the-chat-templates-handbook.ranjankumar.in/"
+Repository = "https://github.com/ranjankumar-gh/template-studio"
+
+[tool.setuptools.packages.find]
+include = ["templatestudio*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

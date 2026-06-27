@@ -1,0 +1,8 @@
+# Core dependency - the pure logic runs with just this.
+jinja2>=3.1
+
+# Optional: needed only to render with a real tokenizer/processor.
+# transformers>=4.5
+
+# Dev:
+# pytest>=8
