@@ -69,6 +69,23 @@ class JSONBlockParser:
             except json.JSONDecodeError:
                 continue  # a code block that is not a tool call; skip it
             calls.append(
-                ParsedToolCall(name=payload["name"], arguments=payload.get("arguments", {}))
+                ParsedToolCall(
+                    name=payload["name"],
+                    arguments=self._normalize_arguments(payload.get("arguments", {})),
+                )
             )
         return calls
+
+    @staticmethod
+    def _normalize_arguments(arguments: object) -> dict:
+        """Coerce arguments to a dict. The message model says arguments is a dict, but
+        many models emit it as a JSON string on the wire; normalize here so callers never
+        have to guess (Chapter 5). Raise loudly on anything that is not a JSON object."""
+        if isinstance(arguments, dict):
+            return arguments
+        if isinstance(arguments, str):
+            decoded = json.loads(arguments)
+            if not isinstance(decoded, dict):
+                raise ValueError(f"tool-call arguments did not decode to an object: {arguments!r}")
+            return decoded
+        raise ValueError(f"tool-call arguments must be a dict or JSON string, got {type(arguments).__name__}")

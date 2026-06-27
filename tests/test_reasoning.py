@@ -16,6 +16,11 @@ def test_strip_reasoning_leaves_plain_text():
     assert strip_reasoning("Paris.") == "Paris."
 
 
+def test_strip_reasoning_removes_all_blocks():
+    generated = "<think>first</think>\nstep one.\n<think>second</think>\ndone."
+    assert strip_reasoning(generated) == "step one.\ndone."
+
+
 def test_has_empty_think_blocks_detects_empty():
     assert has_empty_think_blocks("<|im_start|>assistant\n<think></think>\nhi") is True
 

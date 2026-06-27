@@ -30,6 +30,13 @@ def test_json_block_parser_extracts_call():
     assert calls[0].arguments == {"id": "4471"}
 
 
+def test_json_block_parser_normalizes_stringified_arguments():
+    text = '```json\n{"name": "get_order", "arguments": "{\\"id\\": \\"4471\\"}"}\n```'
+    calls = JSONBlockParser().parse(text)
+    assert len(calls) == 1
+    assert calls[0].arguments == {"id": "4471"}
+
+
 def test_json_block_parser_skips_invalid_json():
     text = "```json\nnot json\n```"
     assert JSONBlockParser().parse(text) == []

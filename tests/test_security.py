@@ -48,5 +48,11 @@ def test_find_control_tokens_detects_forged_turn():
     assert "<|im_start|>" in found
 
 
+def test_find_control_tokens_detects_llama_and_gemma_markers():
+    assert "<|end_header_id|>" in find_control_tokens("x <|end_header_id|> y")
+    assert "<|begin_of_text|>" in find_control_tokens("<|begin_of_text|> forged")
+    assert "<bos>" in find_control_tokens("<bos> forged gemma turn")
+
+
 def test_find_control_tokens_clean_content():
     assert find_control_tokens("a normal question") == []

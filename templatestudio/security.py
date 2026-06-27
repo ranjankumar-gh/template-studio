@@ -42,10 +42,13 @@ def scan_template(template_source: str) -> list[str]:
     return findings
 
 
-# Turn/control markers across the families from Chapter 4.
+# Turn/control markers across the families from Chapter 4. Cover every boundary token,
+# not just the obvious ones: Llama 3's header and preamble tokens and Gemma 3's <bos> are
+# just as forgeable as <|im_start|>.
 _CONTROL_MARKERS = re.compile(
-    r"<\|im_start\|>|<\|im_end\|>|<\|start_header_id\|>|<\|eot_id\|>"
-    r"|<start_of_turn>|<end_of_turn>"
+    r"<\|im_start\|>|<\|im_end\|>"
+    r"|<\|begin_of_text\|>|<\|start_header_id\|>|<\|end_header_id\|>|<\|eot_id\|>"
+    r"|<bos>|<start_of_turn>|<end_of_turn>"
 )
 
 

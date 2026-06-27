@@ -47,3 +47,22 @@ def test_assert_valid_raises_on_bad_conversation():
 
 def test_assert_valid_passes_on_good_conversation():
     assert_valid([{"role": "user", "content": "hi"}])  # does not raise
+
+
+def test_malformed_multimodal_part_flagged():
+    convo = [{"role": "user", "content": [{"type": "image"}]}]
+    problems = validate_conversation(convo)
+    assert any("missing 'url'" in p for p in problems)
+
+
+def test_valid_multimodal_content_has_no_problems():
+    convo = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "what is this?"},
+                {"type": "image", "url": "http://example.com/cat.png"},
+            ],
+        }
+    ]
+    assert validate_conversation(convo) == []
