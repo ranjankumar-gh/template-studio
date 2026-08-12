@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from templatestudio.messages import Conversation
-from templatestudio.parity import _first_divergence
+from templatestudio.parity import first_divergence
 from templatestudio.render import render
 
 if TYPE_CHECKING:
@@ -56,7 +56,7 @@ def check_goldens(
     for case in cases:
         actual = render_case(tokenizer, case)
         if actual != case.expected:
-            divergence = _first_divergence(case.expected, actual) or 0
+            divergence = first_divergence(case.expected, actual) or 0
             failures.append(
                 GoldenFailure(
                     name=case.name,

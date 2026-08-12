@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "template-studio"
-version = "1.0.0"
+version = "1.1.0"
 description = "A render/validate/probe/diff/golden/security toolkit for LLM chat templates - the companion code for The Chat Templates Handbook."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -16,7 +16,8 @@ dependencies = [
 
 [project.optional-dependencies]
 # Needed only to render with a real tokenizer/processor (render, anatomy, live golden).
-live = ["transformers>=4.5"]
+# 4.5 predates apply_chat_template; 4.51 is the floor the book's examples assume.
+live = ["transformers>=4.51"]
 dev = ["pytest>=8"]
 
 [project.urls]

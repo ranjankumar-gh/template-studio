@@ -39,7 +39,7 @@ class ParityReport:
     first_divergence: int | None   # char index of first difference, or None
 
 
-def _first_divergence(a: str, b: str) -> int | None:
+def first_divergence(a: str, b: str) -> int | None:
     i = 0
     while i < len(a) and i < len(b) and a[i] == b[i]:
         i += 1
@@ -63,7 +63,7 @@ def compare_engines(
     reports: list[ParityReport] = []
     for engine in renderers[1:]:
         output = engine.render(template_source, conversation, **kwargs)
-        divergence = _first_divergence(ref_output, output)
+        divergence = first_divergence(ref_output, output)
         reports.append(
             ParityReport(
                 reference=reference.name,
@@ -75,17 +75,23 @@ def compare_engines(
     return reports
 
 
-# Filters and constructs commonly absent from or divergent in minja. Heuristic.
-_RISKY_FILTERS = {"reject", "select", "map", "groupby", "rejectattr", "selectattr"}
+# Filters and constructs commonly absent from or divergent in non-CPython Jinja
+# engines. This is a portability heuristic, not any one engine's spec - engines
+# change, and a list keyed to a named engine goes stale the day it does. Treat a
+# hit as "verify on the real engine", not "broken".
+_RISKY_FILTERS = {
+    "reject", "select", "map", "groupby", "rejectattr", "selectattr"
+}
 
 
 def lint_portability(template_source: str) -> list[str]:
-    """Flag template constructs unlikely to survive the move to minja."""
+    """Flag template constructs unlikely to survive the move off CPython Jinja2."""
     problems: list[str] = []
     for match in re.finditer(r"\|\s*([a-zA-Z_]+)", template_source):
         filter_name = match.group(1)
         if filter_name in _RISKY_FILTERS:
             problems.append(
-                f"filter {filter_name!r} is a known cross-engine risk (often absent in minja)"
+                f"filter {filter_name!r} is a known cross-engine risk "
+                "(verify on the engine you deploy)"
             )
     return problems

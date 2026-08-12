@@ -24,7 +24,10 @@ def assert_pinned(template_source: str, expected_fingerprint: str) -> None:
 
 _SUSPICIOUS_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"https?://"), "hardcoded URL in template source"),
-    (re.compile(r"\{\{\s*['\"][^'\"]{40,}", re.S), "long literal string injected into output"),
+    (
+        re.compile(r"\{\{\s*['\"][^'\"]{40,}", re.S),
+        "long literal string injected into output",
+    ),
     (
         re.compile(r"\{%[^%]*\bif\b[^%]*\bin\b[^%]*\bcontent\b", re.I),
         "branch on message content - possible trigger condition",
@@ -42,13 +45,18 @@ def scan_template(template_source: str) -> list[str]:
     return findings
 
 
-# Turn/control markers across the families from Chapter 4. Cover every boundary token,
-# not just the obvious ones: Llama 3's header and preamble tokens and Gemma 3's <bos> are
-# just as forgeable as <|im_start|>.
+# Turn/control markers across the families from Chapter 4, plus Harmony's channel
+# markers from Chapter 6. Cover every boundary token, not just the obvious ones:
+# Llama 3's preamble and closing header token and Gemma 3's <bos> are as forgeable
+# as <|im_start|>. Content containing any of these is attempting - intentionally or
+# not - to forge structure.
 _CONTROL_MARKERS = re.compile(
     r"<\|im_start\|>|<\|im_end\|>"
-    r"|<\|begin_of_text\|>|<\|start_header_id\|>|<\|end_header_id\|>|<\|eot_id\|>"
+    r"|<\|begin_of_text\|>|<\|start_header_id\|>|<\|end_header_id\|>"
+    r"|<\|eot_id\|>"
     r"|<bos>|<start_of_turn>|<end_of_turn>"
+    r"|<\|start\|>|<\|channel\|>|<\|message\|>|<\|call\|>|<\|end\|>"
+    r"|<\|return\|>"
 )
 
 

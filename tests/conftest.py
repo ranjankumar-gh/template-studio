@@ -10,7 +10,8 @@ from templatestudio.jinja_env import render_template_string
 # A minimal ChatML template used across the offline tests.
 CHATML = (
     "{% for message in messages %}"
-    "{{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>\n' }}"
+    "{{- '<|im_start|>' + message['role'] + '\n' }}"
+    "{{- message['content'] + '<|im_end|>\n' }}"
     "{%- endfor %}"
     "{%- if add_generation_prompt %}{{- '<|im_start|>assistant\n' }}{%- endif %}"
 )

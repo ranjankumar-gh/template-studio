@@ -9,9 +9,10 @@ _EMPTY_THINK = re.compile(r"<think>\s*</think>")
 
 
 def strip_reasoning(generated: str) -> str:
-    """Remove all <think>...</think> blocks from the current generated turn, returning
-    the visible answer. This is the display-side strip. Do not hand-strip history - that
-    is the template checkpoint's job, and it must match native generation spacing (Ch6)."""
+    """Remove all <think>...</think> blocks from the current generated turn,
+    returning the visible answer. This is the display-side strip. Do not
+    hand-strip history - that is the template checkpoint's job, and it must
+    match native generation spacing (Ch6)."""
     return _THINK_BLOCK.sub("", generated).lstrip()
 
 

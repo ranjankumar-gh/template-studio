@@ -78,14 +78,21 @@ class JSONBlockParser:
 
     @staticmethod
     def _normalize_arguments(arguments: object) -> dict:
-        """Coerce arguments to a dict. The message model says arguments is a dict, but
-        many models emit it as a JSON string on the wire; normalize here so callers never
-        have to guess (Chapter 5). Raise loudly on anything that is not a JSON object."""
+        """Coerce arguments to a dict. The message model says arguments is a
+        dict, but many models emit it as a JSON string on the wire; normalize
+        here so callers never have to guess (Chapter 5). Raise loudly on
+        anything that is not a JSON object."""
         if isinstance(arguments, dict):
             return arguments
         if isinstance(arguments, str):
             decoded = json.loads(arguments)
             if not isinstance(decoded, dict):
-                raise ValueError(f"tool-call arguments did not decode to an object: {arguments!r}")
+                raise ValueError(
+                    "tool-call arguments did not decode to an object: "
+                    f"{arguments!r}"
+                )
             return decoded
-        raise ValueError(f"tool-call arguments must be a dict or JSON string, got {type(arguments).__name__}")
+        raise ValueError(
+            "tool-call arguments must be a dict or JSON string, got "
+            f"{type(arguments).__name__}"
+        )

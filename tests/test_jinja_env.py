@@ -33,6 +33,24 @@ def test_raise_exception_global_is_available():
         template.render()
 
 
+def test_generation_tag_parses_and_passes_its_body_through():
+    """Transformers installs AssistantTracker, which claims {% generation %}.
+    An env without it raises TemplateSyntaxError on a real template."""
+    env = build_template_env()
+    template = env.from_string("a{% generation %}b{% endgeneration %}c")
+    assert template.render() == "abc"
+
+
+def test_loopcontrols_extension_supplies_break():
+    """Transformers installs jinja2.ext.loopcontrols; stock Jinja has no break."""
+    env = build_template_env()
+    source = (
+        "{% for n in items %}{% if n == 3 %}{% break %}{% endif %}"
+        "{{ n }}{% endfor %}"
+    )
+    assert env.from_string(source).render(items=[1, 2, 3, 4]) == "12"
+
+
 def test_tojson_filter_does_not_escape_html():
     env = build_template_env()
     template = env.from_string("{{ value | tojson }}")

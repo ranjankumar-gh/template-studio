@@ -20,6 +20,22 @@ class Message(TypedDict):
 Conversation = list[Message]
 
 
+def _validate_tool_calls(tool_calls: object) -> list[str]:
+    """Check the shape of an assistant message's tool_calls (Chapter 5)."""
+    if not isinstance(tool_calls, list):
+        return ["tool_calls must be a list"]
+    problems: list[str] = []
+    for j, call in enumerate(tool_calls):
+        function = call.get("function") if isinstance(call, dict) else None
+        if not isinstance(function, dict):
+            problems.append(f"tool_calls[{j}]: missing function object")
+        elif "name" not in function or "arguments" not in function:
+            problems.append(
+                f"tool_calls[{j}]: function needs name and arguments"
+            )
+    return problems
+
+
 def validate_conversation(conversation: Conversation) -> list[str]:
     """Return a list of input-contract violations. Empty list means well-formed."""
     if not conversation:
@@ -31,9 +47,21 @@ def validate_conversation(conversation: Conversation) -> list[str]:
         if role not in VALID_ROLES:
             problems.append(f"message {i}: unknown role {role!r}")
 
+        tool_calls = message.get("tool_calls")
+        if tool_calls is not None:
+            problems.extend(
+                f"message {i}: {p}" for p in _validate_tool_calls(tool_calls)
+            )
+
         content = message.get("content")
         if content is None:
-            problems.append(f"message {i}: content is None")
+            # An assistant turn that carries tool_calls legitimately has no
+            # content - Chapter 5's tool_call_message builds exactly that
+            # shape - so the content rule does not apply to it. An *empty*
+            # tool_calls list carries nothing, so it does not earn the
+            # exemption either.
+            if role != "assistant" or not tool_calls:
+                problems.append(f"message {i}: content is None")
         elif not isinstance(content, (str, list)):
             kind = type(content).__name__
             problems.append(f"message {i}: content must be str or list, got {kind}")
