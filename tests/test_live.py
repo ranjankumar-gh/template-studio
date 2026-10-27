@@ -37,3 +37,38 @@ def test_safe_render_round_trips(qwen_tokenizer):
     out = safe_render(qwen_tokenizer, convo)
     assert "<|im_start|>" in out
     assert out.rstrip().endswith("assistant") or out.endswith("assistant\n")
+
+
+def test_authoring_checks_on_a_real_tokenizer():
+    """Chapter 8 end to end: the support markers are text to Qwen3 until they are
+    added, and once added the mask covers exactly content plus <|end|>."""
+    pytest.importorskip("transformers")
+    from templatestudio.authoring import (
+        SUPPORT_TEMPLATE,
+        check_assistant_mask,
+        check_marker_tokens,
+        check_stop_alignment,
+        install_template,
+    )
+    from templatestudio.render import load_tokenizer
+
+    try:
+        tok = load_tokenizer(MODEL)  # a fresh copy: this test adds tokens
+    except Exception as exc:
+        pytest.skip(f"could not load {MODEL}: {exc}")
+    markers = ["<|system|>", "<|user|>", "<|assistant|>", "<|end|>"]
+    install_template(tok, SUPPORT_TEMPLATE)
+
+    assert check_marker_tokens(tok, markers)  # split into pieces before
+    tok.add_tokens(markers, special_tokens=True)
+    assert check_marker_tokens(tok, markers) == {}
+
+    convo = [
+        {"role": "user", "content": "Where is my order?"},
+        {"role": "assistant", "content": "Let me check."},
+    ]
+    assert check_assistant_mask(tok, convo) == []
+
+    end_id = tok.convert_tokens_to_ids("<|end|>")
+    assert check_stop_alignment(tok, {"eos_token_id": [151645, 151643]})
+    assert check_stop_alignment(tok, {"eos_token_id": [151645, end_id]}) == []
