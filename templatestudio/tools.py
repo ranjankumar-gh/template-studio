@@ -33,7 +33,7 @@ def tool_call_message(
     name: str, arguments: dict, call_id: str | None = None
 ) -> dict:
     """An assistant message that calls a tool. tool_calls is always a list.
-    call_id pairs the call with its result (Chapter 5, the agent loop)."""
+    call_id pairs the call with its result (see the agent-loop section)."""
     function = {"name": name, "arguments": arguments}
     call: dict = {"type": "function", "function": function}
     if call_id is not None:
@@ -65,7 +65,8 @@ class ToolCallParser(Protocol):
 
 
 class JSONBlockParser:
-    """For models that emit calls as a fenced ```json block."""
+    """For models that emit calls as a fenced ```json block - the format that
+    broke the opening agent when its <tool_call>-tag parser met this output."""
 
     _BLOCK = re.compile(r"```json\s*(\{.*?\})\s*```", re.DOTALL)
 
@@ -76,10 +77,11 @@ class JSONBlockParser:
                 payload = json.loads(match.group(1))
             except json.JSONDecodeError:
                 continue  # a code block that is not a tool call; skip it
+            arguments = payload.get("arguments", {})
             calls.append(
                 ParsedToolCall(
                     name=payload["name"],
-                    arguments=self._normalize_arguments(payload.get("arguments", {})),
+                    arguments=self._normalize_arguments(arguments),
                 )
             )
         return calls
@@ -88,8 +90,8 @@ class JSONBlockParser:
     def _normalize_arguments(arguments: object) -> dict:
         """Coerce arguments to a dict. The message model says arguments is a
         dict, but many models emit it as a JSON string on the wire; normalize
-        here so callers never have to guess (Chapter 5). Raise loudly on
-        anything that is not a JSON object."""
+        here so callers never have to guess. Raise loudly on anything that is
+        not a JSON object."""
         if isinstance(arguments, dict):
             return arguments
         if isinstance(arguments, str):
