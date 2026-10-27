@@ -61,6 +61,11 @@ def test_qwen_vl_large_photo_is_downscaled_or_not_by_the_bounds():
     assert qwen_vl_image_tokens(3000, 4000, **QWEN3_VL_BOUNDS) == 11750
 
 
+def test_qwen_vl_full_hd_frame():
+    assert qwen_vl_image_tokens(1080, 1920) == 1222
+    assert qwen_vl_image_tokens(1080, 1920, **QWEN3_VL_BOUNDS) == 2040
+
+
 def test_gemma3_cost_is_constant():
     assert GEMMA3_IMAGE_TOKENS == 256
 
