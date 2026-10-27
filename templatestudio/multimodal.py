@@ -18,12 +18,15 @@ def text_part(text: str) -> dict:
 
 
 def image_part(url: str) -> dict:
-    """An image part. The url may be a remote URL, a local path, or a data URI."""
+    """An image part. The url may be a remote URL, a local path, or a data URI,
+    depending on what the processor is configured to load."""
     return {"type": "image", "url": url}
 
 
 def user_message(parts: list[dict]) -> dict:
-    """A user turn whose content is an ordered list of typed parts."""
+    """A user turn whose content is an ordered list of typed parts. Order is
+    meaning: the model reads the image where it sits in the list, in the flow of
+    the surrounding text."""
     return {"role": "user", "content": parts}
 
 
@@ -34,7 +37,11 @@ def render_multimodal(
     add_generation_prompt: bool = True,
     **processor_kwargs: object,
 ) -> str:
-    """Render a multimodal conversation through the processor-level template."""
+    """Render a multimodal conversation through the processor-level template.
+
+    The processor (not the tokenizer) owns the multimodal chat template. Extra
+    kwargs like num_frames are forwarded to control media handling.
+    """
     return processor.apply_chat_template(  # type: ignore[attr-defined]
         conversation,
         tokenize=False,
@@ -61,7 +68,8 @@ def validate_content_parts(content: list[dict]) -> list[str]:
 
 
 def count_media_parts(conversation: Conversation) -> int:
-    """Count media (non-text) parts across a conversation."""
+    """Count media (non-text) parts across a conversation - the number of media
+    items the processor must be handed for placeholders to align."""
     total = 0
     for message in conversation:
         content = message.get("content")

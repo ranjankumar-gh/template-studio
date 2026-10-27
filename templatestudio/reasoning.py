@@ -13,7 +13,7 @@ def strip_reasoning(generated: str) -> str:
     """Remove all <think>...</think> blocks from the current generated turn,
     returning the visible answer. This is the display-side strip. Do not
     hand-strip history - that is the template checkpoint's job, and it must
-    match native generation spacing (Ch6)."""
+    match native generation spacing (see the Deep Dive below)."""
     close, opening = generated.find(_CLOSE), generated.find("<think>")
     if close != -1 and (opening == -1 or close < opening):
         # The template opened the block in the generation prompt, so the
@@ -23,13 +23,16 @@ def strip_reasoning(generated: str) -> str:
 
 
 def has_empty_think_blocks(rendered: str) -> bool:
-    """Detect empty historical <think></think> blocks that invalidate the KV cache."""
+    """Detect the empty historical <think></think> blocks that change the
+    prompt prefix and invalidate the KV cache. A rendered history should
+    contain none."""
     return _EMPTY_THINK.search(rendered) is not None
 
 
 def assistant_message(content: str, reasoning: str | None = None) -> dict:
-    """An assistant turn that optionally carries its reasoning in a dedicated field,
-    so the template's checkpoint logic can keep or strip it."""
+    """An assistant turn that optionally carries its reasoning in a
+    dedicated field, so the template's checkpoint logic can keep or strip
+    it - not your concatenation."""
     message: dict = {"role": "assistant", "content": content}
     if reasoning is not None:
         message["reasoning_content"] = reasoning

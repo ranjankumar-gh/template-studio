@@ -15,11 +15,11 @@ from templatestudio.messages import Conversation, assert_valid
 
 
 class GenerationExtension(Extension):
-    """A no-op {% generation %} tag. Transformers installs AssistantTracker, which
-    uses this tag to record which characters the assistant generated (that is how
-    return_assistant_tokens_mask works, Chapter 13). For a string render the body
-    passes through unchanged - but some extension has to claim the tag, or a
-    template that uses it is a syntax error."""
+    """A no-op {% generation %} tag. Transformers installs AssistantTracker,
+    which uses this tag to record which characters the assistant generated
+    (how return_assistant_tokens_mask works, Chapters 8 and 13). For a
+    string render the body passes through unchanged - but some extension has
+    to claim the tag, or a template that uses it is a syntax error."""
 
     tags = {"generation"}
 
@@ -30,17 +30,22 @@ class GenerationExtension(Extension):
 
 
 def raise_exception(message: str) -> None:
-    """Let a template fail loudly (Transformers injects this global)."""
+    """Let a template fail loudly. Transformers injects this so a template
+    can reject malformed input itself - e.g.
+    {{ raise_exception('no system role') }}."""
     raise TemplateError(message)
 
 
 def tojson(obj: object, indent: int | None = None) -> str:
-    """A JSON filter that does not escape HTML characters (Transformers override)."""
+    """A JSON filter that does not escape HTML characters. Transformers
+    overrides Jinja's built-in tojson with this so rendered tool schemas
+    stay readable and correct (the built-in would turn < into \\u003c)."""
     return json.dumps(obj, ensure_ascii=False, indent=indent)
 
 
 def strftime_now(format_str: str) -> str:
-    """datetime.now().strftime(...), for templates that stamp the date."""
+    """datetime.now().strftime(...), exposed to templates that stamp the
+    date into a system message (a surprising number do)."""
     return datetime.now().strftime(format_str)
 
 
@@ -69,8 +74,8 @@ def render_template_string(
 ) -> str:
     """Render a raw chat-template string against a conversation, faithfully.
 
-    The workbench for the rest of the book: experiment, author, or reproduce a bug
-    without loading a model.
+    This is the workbench for the rest of the book: experiment with a template,
+    author one (Ch8), or reproduce a bug (Ch11) without loading a model.
     """
     assert_valid(conversation)
     env = build_template_env()

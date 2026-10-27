@@ -40,7 +40,12 @@ def render(
 
 
 def visible_whitespace(text: str) -> str:
-    """Render a wire-format string with whitespace made visible, for inspection."""
+    """Render a wire-format string with whitespace made visible, for inspection.
+
+    Newlines become a marker plus a real break; tabs and spaces become glyphs.
+    Use this whenever a template 'looks right' but behaves wrong - the bug is
+    almost always in characters you cannot see.
+    """
     return (
         text.replace("\t", "[TAB]")
         .replace(" ", "·")

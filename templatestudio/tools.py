@@ -21,10 +21,11 @@ def get_temperature(location: str, unit: str = "celsius") -> str:
 def tool_schema(fn: object) -> dict:
     """Build a JSON-schema tool description from a Python function.
 
-    Wraps Transformers' get_json_schema (imported lazily). The function must have
-    type hints and a Google-style docstring; that text is the schema the model sees.
+    Wraps Transformers' get_json_schema. The function must have type hints
+    and a Google-style docstring; that text is not documentation here, it
+    is the schema the model sees, so it is load-bearing.
     """
-    from transformers.utils import get_json_schema  # lazy: only needed for schemas
+    from transformers.utils import get_json_schema  # imported lazily
 
     return get_json_schema(fn)
 

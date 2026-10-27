@@ -39,7 +39,11 @@ def _validate_tool_calls(tool_calls: object) -> list[str]:
 
 
 def validate_conversation(conversation: Conversation) -> list[str]:
-    """Return a list of input-contract violations. Empty list means well-formed."""
+    """Return a list of input-contract violations. Empty list means well-formed.
+
+    We collect all problems instead of failing fast, so a caller debugging a bad
+    conversation sees every issue at once rather than one per re-run.
+    """
     if not conversation:
         return ["conversation is empty"]
 

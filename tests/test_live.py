@@ -59,7 +59,7 @@ def test_authoring_checks_on_a_real_tokenizer():
     markers = ["<|system|>", "<|user|>", "<|assistant|>", "<|end|>"]
     install_template(tok, SUPPORT_TEMPLATE)
 
-    assert check_marker_tokens(tok, markers)  # split into pieces before
+    assert set(check_marker_tokens(tok, markers)) == set(markers)  # all split
     tok.add_tokens(markers, special_tokens=True)
     assert check_marker_tokens(tok, markers) == {}
 
