@@ -8,7 +8,7 @@ reasoning, multimodal, authoring round-trips) runs with only jinja2 installed.
 
 from __future__ import annotations
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 
 from templatestudio.messages import (
     Conversation,

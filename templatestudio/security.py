@@ -1,4 +1,4 @@
-"""Templates as an attack surface: provenance, scanning, injection (Chapter 11)."""
+"""Templates as an attack surface: provenance, scanning, injection (Chapter 12)."""
 
 from __future__ import annotations
 

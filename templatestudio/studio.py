@@ -1,4 +1,4 @@
-"""The capstone: composing every check into one audit and a CI gate (Chapter 12)."""
+"""The capstone: composing every check into one audit and a CI gate (Chapter 13)."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from templatestudio.parity import (
     lint_portability,
 )
 from templatestudio.security import scan_template, template_fingerprint
+from templatestudio.serving import TokenRenderer
 
 if TYPE_CHECKING:
     from transformers import PreTrainedTokenizerBase
@@ -21,10 +22,10 @@ if TYPE_CHECKING:
 @dataclass
 class StudioReport:
     portability: list[str] = field(default_factory=list)        # Ch9
-    security: list[str] = field(default_factory=list)           # Ch11
-    golden_failures: list[GoldenFailure] = field(default_factory=list)   # Ch10
+    security: list[str] = field(default_factory=list)           # Ch12
+    golden_failures: list[GoldenFailure] = field(default_factory=list)   # Ch11
     parity: list[ParityReport] = field(default_factory=list)    # Ch9
-    pin_ok: bool = True                                         # Ch11
+    pin_ok: bool = True                                         # Ch12
 
     @property
     def ok(self) -> bool:
@@ -46,14 +47,18 @@ def audit_template(
     engines: list[EngineRenderer],
     pinned_fingerprint: str | None = None,
     probe: GoldenCase | None = None,
+    engine: TokenRenderer | None = None,
 ) -> StudioReport:
-    """Run every Template Studio check and collect the findings into one report."""
+    """Run every Template Studio check that inspects a template and collect
+    the findings into one report."""
     report = StudioReport()
     report.portability = lint_portability(template_source)          # Ch9
-    report.security = scan_template(template_source)                # Ch11
-    report.golden_failures = check_goldens(tokenizer, goldens)      # Ch10
+    report.security = scan_template(template_source)                # Ch12
+    report.golden_failures = check_goldens(                         # Ch11
+        tokenizer, goldens, engine=engine
+    )
 
-    if pinned_fingerprint is not None:                             # Ch11
+    if pinned_fingerprint is not None:                             # Ch12
         report.pin_ok = template_fingerprint(template_source) == pinned_fingerprint
 
     if probe is not None and engines:                             # Ch9

@@ -17,7 +17,7 @@ from templatestudio.messages import Conversation, assert_valid
 class GenerationExtension(Extension):
     """A no-op {% generation %} tag. Transformers installs AssistantTracker, which
     uses this tag to record which characters the assistant generated (that is how
-    return_assistant_tokens_mask works, Chapter 12). For a string render the body
+    return_assistant_tokens_mask works, Chapter 13). For a string render the body
     passes through unchanged - but some extension has to claim the tag, or a
     template that uses it is a syntax error."""
 

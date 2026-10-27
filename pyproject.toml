@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "template-studio"
-version = "1.1.1"
+version = "1.2.0"
 description = "A render/validate/probe/diff/golden/security toolkit for LLM chat templates - the companion code for The Chat Templates Handbook."
 readme = "README.md"
 requires-python = ">=3.10"

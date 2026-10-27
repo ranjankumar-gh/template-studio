@@ -22,7 +22,7 @@ pip install -e ".[dev]"       # + pytest
 ## Chapter snapshots
 
 `main` holds the finished toolkit. Each chapter of the book has a tag holding the toolkit as it
-stands at the end of that chapter - `v1.2/ch01-the-gap` through `v1.2/ch12-capstone` - and every
+stands at the end of that chapter - `v1.2/ch01-the-gap` through `v1.2/ch13-capstone` - and every
 tag's tests pass on its own:
 
 ```bash
@@ -42,14 +42,16 @@ security, reasoning, multimodal, authoring round-trips - runs with only `jinja2`
 | `render` | 1,2,5,6 | `load_tokenizer`, `render`, `safe_render`, `visible_whitespace` |
 | `jinja_env` | 3 | `build_template_env`, `render_template_string` (the faithful environment) |
 | `anatomy` | 4 | `describe_template` via differential probing |
-| `tools` | 5 | `tool_schema`, message builders, `JSONBlockParser` |
+| `tools` | 5 | `tool_schema`, message builders, `JSONBlockParser`, `validate_tool_pairing` |
 | `reasoning` | 6 | `strip_reasoning`, `has_empty_think_blocks`, `assistant_message` |
-| `multimodal` | 7 | typed-content builders, `validate_content_parts`, `count_media_parts` |
-| `authoring` | 8 | `install_template`, `assert_reproduces_training_format` |
+| `multimodal` | 7 | typed-content builders, `validate_content_parts`, `qwen_vl_image_tokens` |
+| `authoring` | 8 | `install_template`, round-trips, `check_stop_alignment`, `check_assistant_mask` |
 | `parity` | 9 | `compare_engines`, `lint_portability` (the parity gap) |
-| `golden` | 10 | `GoldenCase`, `record_goldens`, `check_goldens` (the golden-token test) |
-| `security` | 11 | `template_fingerprint`, `scan_template`, `find_control_tokens` |
-| `studio` | 12 | `audit_template`, `ci_gate` (the whole suite + CI gate) |
+| `serving` | 10 | `TransformersTokens`, `LlamaCppTokens`, `VLLMTokens`, `compare_token_renders` |
+| `prefix` | 10 | `assert_prefix_stable` (the prefix contract) |
+| `golden` | 11 | `GoldenCase`, `record_goldens`, `record_golden_ids`, `check_goldens` |
+| `security` | 12 | `template_fingerprint`, `scan_template`, `find_control_tokens` |
+| `studio` | 13 | `audit_template`, `ci_gate` (the whole suite + CI gate) |
 
 ## Quick start
 
