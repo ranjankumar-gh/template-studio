@@ -106,7 +106,6 @@ def check_goldens(
             token_failure = _token_failure(engine, case)
             if token_failure is not None:
                 failures.append(token_failure)
-                continue
         actual = render_case(tokenizer, case)
         if actual != case.expected:
             divergence = first_divergence(case.expected, actual) or 0

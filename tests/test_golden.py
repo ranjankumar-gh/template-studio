@@ -90,3 +90,13 @@ def test_string_failures_still_report_chars(fake_tokenizer):
     case = replace(_token_case(fake_tokenizer, FakeEngine()), expected="other")
     (failure,) = check_goldens(fake_tokenizer, [case])
     assert failure.unit == "char"
+
+
+def test_token_failure_keeps_the_readable_string_diff(fake_tokenizer):
+    """When the ids and the string both changed, the token failure is
+    asserted and the located string diff is reported beside it."""
+    case = replace(_token_case(fake_tokenizer, FakeEngine()), expected="other")
+    token, string = check_goldens(
+        fake_tokenizer, [case], engine=FakeEngine(extra=[1])
+    )
+    assert token.unit == "token" and string.unit == "char"
