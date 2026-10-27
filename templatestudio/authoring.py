@@ -13,7 +13,8 @@ if TYPE_CHECKING:
 # Derived from a training format - a transcription, not a guess.
 SUPPORT_TEMPLATE = (
     "{% for message in messages %}"
-    "{{- '<|' + message['role'] + '|>\n' + message['content'] + '\n' }}"
+    "{{- '<|' + message['role'] + '|>\n' }}"
+    "{{- message['content'] + '<|end|>\n' }}"
     "{%- endfor %}"
     "{%- if add_generation_prompt %}{{- '<|assistant|>\n' }}{%- endif %}"
 )

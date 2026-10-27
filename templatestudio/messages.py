@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict, Union
 
-Role = Literal["system", "user", "assistant", "tool"]
-VALID_ROLES: frozenset[str] = frozenset({"system", "user", "assistant", "tool"})
+Role = Literal["system", "developer", "user", "assistant", "tool"]
+VALID_ROLES: frozenset[str] = frozenset(
+    {"system", "developer", "user", "assistant", "tool"}
+)
 
 # A content part is one item in a multimodal or tool message (Chapter 7).
 ContentPart = dict[str, object]

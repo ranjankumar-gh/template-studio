@@ -21,6 +21,12 @@ def test_strip_reasoning_removes_all_blocks():
     assert strip_reasoning(generated) == "step one.\ndone."
 
 
+def test_strip_reasoning_handles_think_opened_in_the_prompt():
+    # The template put <think> in the generation prompt; output has only </think>.
+    generated = "let me think\n</think>\n\nParis."
+    assert strip_reasoning(generated) == "Paris."
+
+
 def test_has_empty_think_blocks_detects_empty():
     assert has_empty_think_blocks("<|im_start|>assistant\n<think></think>\nhi") is True
 

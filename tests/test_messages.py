@@ -18,6 +18,15 @@ def test_valid_conversation_has_no_problems():
     assert validate_conversation(convo) == []
 
 
+def test_developer_role_is_valid():
+    convo = [
+        {"role": "system", "content": "be terse"},
+        {"role": "developer", "content": "answer in French"},
+        {"role": "user", "content": "hi"},
+    ]
+    assert validate_conversation(convo) == []
+
+
 def test_empty_conversation_flagged():
     assert validate_conversation([]) == ["conversation is empty"]
 

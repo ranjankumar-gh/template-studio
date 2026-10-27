@@ -6,6 +6,7 @@ import re
 
 _THINK_BLOCK = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
 _EMPTY_THINK = re.compile(r"<think>\s*</think>")
+_CLOSE = "</think>"
 
 
 def strip_reasoning(generated: str) -> str:
@@ -13,6 +14,11 @@ def strip_reasoning(generated: str) -> str:
     returning the visible answer. This is the display-side strip. Do not
     hand-strip history - that is the template checkpoint's job, and it must
     match native generation spacing (Ch6)."""
+    close, opening = generated.find(_CLOSE), generated.find("<think>")
+    if close != -1 and (opening == -1 or close < opening):
+        # The template opened the block in the generation prompt, so the
+        # output starts mid-reasoning and carries only the closing tag.
+        generated = generated[close + len(_CLOSE):]
     return _THINK_BLOCK.sub("", generated).lstrip()
 
 
