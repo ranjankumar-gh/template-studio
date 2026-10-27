@@ -81,7 +81,10 @@ def ci_gate(report: StudioReport) -> int:
     if not report.pin_ok:
         print("  [provenance] template fingerprint does not match the pinned value")
     for failure in report.golden_failures:
-        print(f"  [golden] {failure.name}: diverged at char {failure.first_divergence}")
+        print(
+            f"  [golden] {failure.name}: "
+            f"diverged at {failure.unit} {failure.first_divergence}"
+        )
     for parity in report.parity:
         if not parity.identical:
             print(
