@@ -1,4 +1,4 @@
-"""Rendering a conversation into a model's wire format (Chapters 1, 2)."""
+"""Rendering a conversation into a model's wire format (Chapters 1, 2, 5)."""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ def render(
     conversation: Conversation,
     *,
     add_generation_prompt: bool = True,
+    tools: list[dict] | None = None,
 ) -> str:
     """Render a conversation into its model-specific wire format.
 
@@ -29,6 +30,7 @@ def render(
     """
     return tokenizer.apply_chat_template(
         conversation,
+        tools=tools,
         tokenize=False,
         add_generation_prompt=add_generation_prompt,
     )
@@ -48,6 +50,7 @@ def safe_render(
     conversation: Conversation,
     *,
     add_generation_prompt: bool = True,
+    tools: list[dict] | None = None,
 ) -> str:
     """Validate the input contract, then render. The only call you should ship."""
     assert_valid(conversation)
@@ -55,4 +58,5 @@ def safe_render(
         tokenizer,
         conversation,
         add_generation_prompt=add_generation_prompt,
+        tools=tools,
     )
