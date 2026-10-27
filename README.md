@@ -13,9 +13,21 @@ nothing raises. Template Studio makes the wire format a first-class, tested, rev
 ## Install
 
 ```bash
-pip install -e .            # core (jinja2 only)
-pip install -e ".[live]"    # + transformers, for rendering with a real tokenizer
-pip install -e ".[dev]"     # + pytest
+pip install -e ".[live,dev]"  # what the book's examples assume
+pip install -e .              # core (jinja2 only)
+pip install -e ".[live]"      # + transformers, for rendering with a real tokenizer
+pip install -e ".[dev]"       # + pytest
+```
+
+## Chapter snapshots
+
+`main` holds the finished toolkit. Each chapter of the book has a tag holding the toolkit as it
+stands at the end of that chapter - `v1.2/ch01-the-gap` through `v1.2/ch12-capstone` - and every
+tag's tests pass on its own:
+
+```bash
+git fetch --tags
+git checkout v1.2/ch05-tool-calling   # the toolkit at the end of Chapter 5
 ```
 
 `transformers` is **optional**: it is needed only to render with a real tokenizer or processor

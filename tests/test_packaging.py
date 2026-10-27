@@ -1,6 +1,6 @@
 """The declared dependency floors and the shipped version, pinned.
 
-`transformers>=4.5` predates `apply_chat_template` entirely (F-E12): a resolver
+`transformers>=4.5` predates `apply_chat_template` entirely: a resolver
 honouring that floor can install a Transformers with no chat-template support at
 all, against a package whose whole subject is chat templates.
 """
@@ -26,8 +26,7 @@ def _floor(text: str) -> tuple[int, ...]:
 
 
 def test_no_source_line_exceeds_88_columns():
-    """The house limit the book states for code. M-2 measured four package lines
-    over it; a test is cheaper than remeasuring by hand each printing."""
+    """The house limit the book states for code, pinned so it cannot regress."""
     over: list[str] = []
     for path in sorted(_ROOT.rglob("*.py")):
         if "__pycache__" in path.parts:
