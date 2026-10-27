@@ -1,14 +1,13 @@
-"""Rendering a conversation into a model's wire format (Chapter 1)."""
+"""Rendering a conversation into a model's wire format (Chapters 1, 2)."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from templatestudio.messages import Conversation, assert_valid
+
 if TYPE_CHECKING:
     from transformers import PreTrainedTokenizerBase
-
-Message = dict[str, str]
-Conversation = list[Message]
 
 
 def load_tokenizer(model_id: str) -> "PreTrainedTokenizerBase":
@@ -43,3 +42,17 @@ def visible_whitespace(text: str) -> str:
         .replace("\n", "\\n\n")
     )
 
+
+def safe_render(
+    tokenizer: "PreTrainedTokenizerBase",
+    conversation: Conversation,
+    *,
+    add_generation_prompt: bool = True,
+) -> str:
+    """Validate the input contract, then render. The only call you should ship."""
+    assert_valid(conversation)
+    return render(
+        tokenizer,
+        conversation,
+        add_generation_prompt=add_generation_prompt,
+    )
