@@ -72,3 +72,30 @@ def test_authoring_checks_on_a_real_tokenizer():
     end_id = tok.convert_tokens_to_ids("<|end|>")
     assert check_stop_alignment(tok, {"eos_token_id": [151645, 151643]})
     assert check_stop_alignment(tok, {"eos_token_id": [151645, end_id]}) == []
+
+
+def test_llama_cpp_matches_transformers_token_for_token(qwen_tokenizer):
+    """Chapter 10's live comparison. Opt in by pointing TSH_LLAMA_CPP_URL at a
+    llama.cpp server running Qwen/Qwen3-0.6B-GGUF."""
+    import os
+
+    url = os.environ.get("TSH_LLAMA_CPP_URL")
+    if not url:
+        pytest.skip("set TSH_LLAMA_CPP_URL to a llama.cpp server serving Qwen3-0.6B")
+    from templatestudio.prefix import assert_prefix_stable
+    from templatestudio.serving import (
+        LlamaCppTokens,
+        TransformersTokens,
+        compare_token_renders,
+    )
+
+    engines = [TransformersTokens(qwen_tokenizer), LlamaCppTokens(url)]
+    convo = [
+        {"role": "system", "content": "You are a terse support agent."},
+        {"role": "user", "content": "Where is my order?"},
+        {"role": "assistant", "content": "What is the order id?"},
+        {"role": "user", "content": "#4471"},
+    ]
+    assert compare_token_renders(engines, convo) == []
+    assert compare_token_renders(engines, convo, enable_thinking=False) == []
+    assert_prefix_stable(engines[1].ids, convo)
