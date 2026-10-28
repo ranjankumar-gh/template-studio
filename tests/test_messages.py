@@ -7,6 +7,9 @@ from templatestudio.messages import (
     assert_valid,
     validate_conversation,
 )
+from templatestudio.tools import tool_call_message, tool_result_message
+
+
 def test_valid_conversation_has_no_problems():
     convo = [
         {"role": "system", "content": "be terse"},
@@ -56,9 +59,29 @@ def test_assert_valid_passes_on_good_conversation():
     assert_valid([{"role": "user", "content": "hi"}])  # does not raise
 
 
+def test_canonical_tool_round_trip_validates():
+    """Chapter 5's canonical four-message round trip, built from the book's own
+    helpers. An assistant turn carrying tool_calls has no content, and ch02 now
+    prints the exemption that makes it well-formed."""
+    convo = [
+        {"role": "user", "content": "What is the temperature in Paris?"},
+        tool_call_message("get_temperature", {"location": "Paris, France"}),
+        tool_result_message("get_temperature", "22"),
+        {"role": "assistant", "content": "It is 22 degrees in Paris."},
+    ]
+    assert validate_conversation(convo) == []
+
+
 def test_assistant_with_neither_content_nor_tool_calls_flagged():
     """The exemption is for tool_calls turns only, not for empty assistants."""
     problems = validate_conversation([{"role": "assistant"}])
+    assert problems == ["message 0: content is None"]
+
+
+def test_user_turn_carrying_tool_calls_still_flagged():
+    """Only an assistant may omit content in favour of tool_calls."""
+    call = tool_call_message("get_temperature", {"location": "Paris"})
+    problems = validate_conversation([{**call, "role": "user"}])
     assert problems == ["message 0: content is None"]
 
 
