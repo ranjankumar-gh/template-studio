@@ -59,6 +59,12 @@ def test_assert_valid_passes_on_good_conversation():
     assert_valid([{"role": "user", "content": "hi"}])  # does not raise
 
 
+def test_malformed_multimodal_part_flagged():
+    convo = [{"role": "user", "content": [{"type": "image"}]}]
+    problems = validate_conversation(convo)
+    assert any("missing 'url'" in p for p in problems)
+
+
 def test_canonical_tool_round_trip_validates():
     """Chapter 5's canonical four-message round trip, built from the book's own
     helpers. An assistant turn carrying tool_calls has no content, and ch02 now
