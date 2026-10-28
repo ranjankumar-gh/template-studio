@@ -13,7 +13,7 @@ def strip_reasoning(generated: str) -> str:
     """Remove all <think>...</think> blocks from the current generated turn,
     returning the visible answer. This is the display-side strip. Do not
     hand-strip history - that is the template checkpoint's job, and it must
-    match native generation spacing (see the Deep Dive below)."""
+    match native generation spacing."""
     close, opening = generated.find(_CLOSE), generated.find("<think>")
     if close != -1 and (opening == -1 or close < opening):
         # The template opened the block in the generation prompt, so the

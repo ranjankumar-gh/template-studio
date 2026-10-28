@@ -34,7 +34,7 @@ def tool_call_message(
     name: str, arguments: dict, call_id: str | None = None
 ) -> dict:
     """An assistant message that calls a tool. tool_calls is always a list.
-    call_id pairs the call with its result (see the agent-loop section)."""
+    call_id pairs the call with its result (see validate_tool_pairing)."""
     function = {"name": name, "arguments": arguments}
     call: dict = {"type": "function", "function": function}
     if call_id is not None:
