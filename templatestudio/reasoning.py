@@ -23,9 +23,10 @@ def strip_reasoning(generated: str) -> str:
 
 
 def has_empty_think_blocks(rendered: str) -> bool:
-    """Detect the empty historical <think></think> blocks that change the
-    prompt prefix and invalidate the KV cache. A rendered history should
-    contain none."""
+    """Detect empty <think></think> blocks in a rendered history. Inside
+    an agent loop a kept step must reproduce the reasoning the model
+    generated; an empty block there is a mismatch that re-prefills the
+    step on every request."""
     return _EMPTY_THINK.search(rendered) is not None
 
 
