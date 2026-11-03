@@ -61,9 +61,9 @@ def validate_conversation(conversation: Conversation) -> list[str]:
 
         content = message.get("content")
         # An assistant turn that carries tool_calls legitimately has no
-        # content: Chapter 5's tool_call_message builds it with None, and
-        # client frameworks send "". An *empty* tool_calls list carries
-        # nothing, so it does not earn the exemption.
+        # content: Chapter 5's tool_call_message leaves the key out, and
+        # client frameworks send None or "". An *empty* tool_calls list
+        # carries nothing, so it does not earn the exemption.
         calls_only = role == "assistant" and bool(tool_calls)
         if content is None:
             if not calls_only:

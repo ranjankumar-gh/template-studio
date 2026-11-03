@@ -134,8 +134,8 @@ def scan_template(template_source: str) -> list[str]:
 
 
 # The fallback when you scan before you know which model will render: turn and
-# control markers across the families from Chapter 4, Harmony's from Chapter 6,
-# and Qwen3's tool and reasoning tags. With the deployed tokenizer, use
+# control markers across the families from Chapter 4, gpt-oss Harmony's, and
+# Qwen3's tool and reasoning tags. With the deployed tokenizer, use
 # control_markers instead - it cannot miss a token the model actually has.
 _CONTROL_MARKERS = re.compile(
     r"<\|im_start\|>|<\|im_end\|>|<\|endoftext\|>"
