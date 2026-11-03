@@ -10,4 +10,21 @@ from __future__ import annotations
 
 __version__ = "1.2.0"
 
-__all__ = ["__version__"]
+from templatestudio.messages import (
+    Conversation,
+    InvalidConversation,
+    Message,
+    Role,
+    assert_valid,
+    validate_conversation,
+)
+
+__all__ = [
+    "__version__",
+    "Conversation",
+    "InvalidConversation",
+    "Message",
+    "Role",
+    "assert_valid",
+    "validate_conversation",
+]
