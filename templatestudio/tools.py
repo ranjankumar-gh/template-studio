@@ -78,6 +78,10 @@ class JSONBlockParser:
                 payload = json.loads(match.group(1))
             except json.JSONDecodeError:
                 continue  # a code block that is not a tool call; skip it
+            if not isinstance(payload, dict) or not isinstance(
+                payload.get("name"), str
+            ):
+                continue  # JSON that names no tool, e.g. a config example
             arguments = payload.get("arguments", {})
             calls.append(
                 ParsedToolCall(
@@ -109,6 +113,15 @@ class JSONBlockParser:
         )
 
 
+class HermesParser(JSONBlockParser):
+    """For models that wrap each call's JSON in <tool_call> tags - the
+    Hermes format. Qwen3 emits it, vLLM parses it with --tool-call-parser
+    hermes, and it is the parser the opening agent was running. Same
+    decoding as JSONBlockParser; only the wrapper differs."""
+
+    _BLOCK = re.compile(r"<tool_call>\s*(\{.*?\})\s*</tool_call>", re.DOTALL)
+
+
 def parallel_tool_call_message(*calls: dict) -> dict:
     """One assistant turn carrying several calls, built from single-call
     messages. Not every model was trained to emit this (Llama 3 was not)."""
@@ -126,6 +139,11 @@ def validate_tool_pairing(conversation: list[dict]) -> list[str]:
     pending: list[str | None] = []  # call ids awaiting results, in order
     for i, message in enumerate(conversation):
         role = message.get("role")
+        if role in ("assistant", "user") and pending:
+            # A new turn before every call was answered: truncation or a
+            # retry cut the results the model is about to be shown without.
+            problems.append(f"message {i}: {len(pending)} call(s) unanswered")
+            pending = []
         if role == "assistant":
             pending = [c.get("id") for c in message.get("tool_calls") or []]
         elif role == "tool":
@@ -139,9 +157,8 @@ def validate_tool_pairing(conversation: list[dict]) -> list[str]:
             else:
                 answered = result_id if result_id is not None else pending[0]
                 pending.remove(answered)
-        elif role == "user" and pending:
-            problems.append(f"message {i}: {len(pending)} call(s) unanswered")
-            pending = []
+    if pending:
+        problems.append(f"end of conversation: {len(pending)} call(s) unanswered")
     return problems
 
 
@@ -162,10 +179,20 @@ def mcp_result_to_tool_message(
             mime = block.get("mimeType") or block.get("uri") or "unknown"
             parts.append(f"[{kind} omitted: {mime}]")
     structured = result.get("structuredContent")
-    if structured is not None:
-        serialized = json.dumps(structured, ensure_ascii=False)
-        if serialized not in parts:
-            parts.append(serialized)
+    if structured is not None and not any(
+        _carries(part, structured) for part in parts
+    ):
+        parts.append(json.dumps(structured, ensure_ascii=False))
     if result.get("isError"):
         parts.insert(0, "[tool error]")
     return tool_result_message(name, "\n".join(parts), tool_call_id)
+
+
+def _carries(text: str, value: object) -> bool:
+    """True when a text block already holds value. Servers send the
+    structured result as a text block too, pretty-printed or compact, so
+    compare the parsed JSON, not the string."""
+    try:
+        return json.loads(text) == value
+    except json.JSONDecodeError:
+        return False
