@@ -100,3 +100,16 @@ def test_token_failure_keeps_the_readable_string_diff(fake_tokenizer):
         fake_tokenizer, [case], engine=FakeEngine(extra=[1])
     )
     assert token.unit == "token" and string.unit == "char"
+
+
+def test_a_token_only_golden_runs_without_a_string(fake_tokenizer):
+    """Chapter 11, Incident 3: expected=None checks the ids and nothing else,
+    instead of comparing a render against a placeholder."""
+    convo = [{"role": "user", "content": "hi"}]
+    base = GoldenCase("no_think", convo, kwargs={"enable_thinking": False})
+    ids = record_golden_ids(FakeEngine(), [base])["no_think"]
+    case = replace(base, expected_ids=ids)
+    assert check_goldens(fake_tokenizer, [case], engine=FakeEngine()) == []
+    typo = replace(case, kwargs={"enable_thinkng": False})
+    (failure,) = check_goldens(fake_tokenizer, [typo], engine=FakeEngine())
+    assert failure.unit == "token" and failure.first_divergence == 1

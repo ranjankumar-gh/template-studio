@@ -18,11 +18,11 @@ if TYPE_CHECKING:
 class GoldenCase:
     """A fixed conversation, the exact wire format it must render to, and -
     when recorded from a serving engine - the exact token ids that engine
-    sends the model."""
+    sends the model. A token-only case leaves expected as None."""
 
     name: str
     conversation: Conversation
-    expected: str
+    expected: str | None = None
     add_generation_prompt: bool = True
     kwargs: dict = field(default_factory=dict)
     expected_ids: tuple[int, ...] | None = None
@@ -99,13 +99,16 @@ def check_goldens(
 ) -> list[GoldenFailure]:
     """Assert each case still produces its goldens. With an engine, a case
     that carries expected_ids is checked token for token against what the
-    engine sends; every case is checked against its string. Empty = pass."""
+    engine sends; every case that carries a string is checked against it.
+    Empty = pass."""
     failures: list[GoldenFailure] = []
     for case in cases:
         if engine is not None and case.expected_ids is not None:
             token_failure = _token_failure(engine, case)
             if token_failure is not None:
                 failures.append(token_failure)
+        if case.expected is None:
+            continue  # a token-only golden: nothing to compare as a string
         actual = render_case(tokenizer, case)
         if actual != case.expected:
             divergence = first_divergence(case.expected, actual) or 0
