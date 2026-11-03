@@ -195,3 +195,42 @@ def test_mask_check_reports_a_span_that_includes_the_header():
         lambda t, ids: _span_mask(t, ids, "<|assistant|>\nLet me check.<|end|>")
     )
     assert "expected" in check_assistant_mask(tok, CONVO)[0]
+
+
+def test_mask_check_reports_a_trailing_newline_inside_the_span():
+    """The placement error .strip() used to hide: {% generation %} wrapping
+    the template's newline trains the model to emit it."""
+    tok = MaskTokenizer(lambda t, ids: _span_mask(t, ids, "Let me check.<|end|>\n"))
+    assert "expected" in check_assistant_mask(tok, CONVO)[0]
+
+
+# --- the trainer's own labels, and the rows LoRA can leave frozen ---
+
+from templatestudio.authoring import check_trained_spans, untrained_rows  # noqa: E402
+
+END = 1003
+
+
+def test_trained_spans_that_end_on_the_marker_pass():
+    labels = [-100, -100, 5, 6, END, -100, -100, 7, END]
+    assert check_trained_spans(labels, END) == []
+
+
+def test_a_span_whose_stop_token_was_masked_is_reported():
+    """pad_token == end-of-turn under a collator that masks by pad id."""
+    labels = [-100, 5, 6, -100, -100]
+    assert check_trained_spans(labels, END) == ["trained span ending at 2 ends on id 6"]
+
+
+def test_a_span_running_to_the_end_of_the_row_is_checked():
+    assert check_trained_spans([-100, 5, 6], END) == [
+        "trained span ending at 2 ends on id 6"
+    ]
+
+
+def test_untrained_rows_finds_the_row_that_never_moved():
+    np = pytest.importorskip("numpy")
+    before = np.zeros((4, 3))
+    after = before.copy()
+    after[2] += 0.5
+    assert untrained_rows(before, after, [2, 3]) == [3]

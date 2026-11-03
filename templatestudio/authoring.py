@@ -145,8 +145,9 @@ def check_stop_alignment(
         )
     if getattr(tokenizer, "pad_token_id", None) == eot:
         problems.append(
-            f"pad_token_id is {end_of_turn!r}: a collator that masks padding "
-            "masks the stop token out of the loss"
+            f"pad_token_id is {end_of_turn!r}: a collator that masks labels by "
+            "pad id (transformers.DataCollatorForLanguageModeling, or your own) "
+            "masks the stop token out of the loss; TRL's masks by position"
         )
     return problems
 
@@ -183,9 +184,32 @@ def check_assistant_mask(
         return [f"mask has {len(runs)} spans for {len(turns)} assistant turns"]
     problems: list[str] = []
     for i, (run, content) in enumerate(zip(runs, turns)):
-        span = tokenizer.decode(run).strip()
-        if span != content + end_of_turn:
+        # Compare ids, not decoded text: a stray newline or space inside the
+        # span is a token the model is trained to emit, and .strip() hides it.
+        expected = tokenizer.encode(content + end_of_turn, add_special_tokens=False)
+        if run != list(expected):
             problems.append(
-                f"span {i} is {span!r}, expected {content + end_of_turn!r}"
+                f"span {i} is {tokenizer.decode(run)!r}, "
+                f"expected {content + end_of_turn!r}"
             )
     return problems
+
+
+def check_trained_spans(labels: Sequence[int], end_of_turn_id: int) -> list[str]:
+    """Check one row of a real training batch: every run of positions the
+    loss covers must end on the end-of-turn id. It reads the labels the
+    trainer will use, so it holds for any trainer and any collator."""
+    problems: list[str] = []
+    for i, label in enumerate(labels):
+        last_of_run = label != -100 and (i + 1 == len(labels) or labels[i + 1] == -100)
+        if last_of_run and label != end_of_turn_id:
+            problems.append(f"trained span ending at {i} ends on id {label}")
+    return problems
+
+
+def untrained_rows(before: Any, after: Any, token_ids: Iterable[int]) -> list[int]:
+    """Return the ids whose rows did not move in training. Pass the output
+    embedding (lm_head) weight copied before training and after; a new
+    end-of-turn token whose row never moved is a token the model never
+    learned to emit."""
+    return [t for t in token_ids if bool((before[t] == after[t]).all())]
