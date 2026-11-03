@@ -7,11 +7,11 @@ name = "template-studio"
 version = "1.2.0"
 description = "A render/validate/probe/diff/golden/security toolkit for LLM chat templates - the companion code for The Chat Templates Handbook."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [{ name = "Ranjan Kumar" }]
 license = { text = "MIT" }
 dependencies = [
-    "jinja2>=3.1",
+    "jinja2>=3.1.6",  # 3.1.5 and 3.1.6 fix sandbox escapes (CVE-2024-56326, CVE-2025-27516)
 ]
 
 [project.optional-dependencies]

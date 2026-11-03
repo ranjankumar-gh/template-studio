@@ -23,7 +23,24 @@ pip install -e ".[dev]"       # + pytest
 
 `main` holds the finished toolkit. Each chapter of the book has a tag holding the toolkit as it
 stands at the end of that chapter - `v1.2/ch01-the-gap` through `v1.2/ch13-capstone` - and every
-tag's tests pass on its own:
+tag's tests pass on its own.
+
+| Chapter | Tag |
+|---|---|
+| 1 | `v1.2/ch01-the-gap` |
+| 2 | `v1.2/ch02-message-model` |
+| 3 | `v1.2/ch03-just-enough-jinja` |
+| 4 | `v1.2/ch04-anatomy` |
+| 5 | `v1.2/ch05-tool-calling` |
+| 6 | `v1.2/ch06-reasoning` |
+| 7 | `v1.2/ch07-multimodal` |
+| 8 | `v1.2/ch08-authoring` |
+| 9 | `v1.2/ch09-cross-engine` |
+| 10 | `v1.2/ch10-endpoint` |
+| 11 | `v1.2/ch11-debugging` |
+| 12 | `v1.2/ch12-security` |
+| 13 | `v1.2/ch13-capstone` |
+
 
 ```bash
 git fetch --tags

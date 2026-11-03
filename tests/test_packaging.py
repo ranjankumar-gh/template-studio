@@ -47,13 +47,12 @@ def test_requirements_transformers_floor_matches_pyproject():
     assert _floor(_REQUIREMENTS) == _floor(_PYPROJECT)
 
 
-def test_version_carries_the_v1_1_minor_bump():
-    """v1.1 adds public API - system_handling, and first_divergence's rename -
-    so the package minor version moves with it."""
+def test_version_matches_the_book_edition():
+    """The package version tracks the book edition."""
     match = re.search(r'^version = "([^"]+)"', _PYPROJECT, re.M)
     assert match is not None
     version = tuple(int(part) for part in match.group(1).split("."))
-    assert version >= (1, 1, 0)
+    assert version[:2] == (1, 2)
 
 
 def test_dunder_version_matches_pyproject():
