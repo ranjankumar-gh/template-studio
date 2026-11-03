@@ -36,11 +36,24 @@ def raise_exception(message: str) -> None:
     raise TemplateError(message)
 
 
-def tojson(obj: object, indent: int | None = None) -> str:
-    """A JSON filter that does not escape HTML characters. Transformers
-    overrides Jinja's built-in tojson with this so rendered tool schemas
-    stay readable and correct (the built-in would turn < into \\u003c)."""
-    return json.dumps(obj, ensure_ascii=False, indent=indent)
+def tojson(
+    x: object,
+    ensure_ascii: bool = False,
+    indent: int | None = None,
+    separators: tuple[str, str] | None = None,
+    sort_keys: bool = False,
+) -> str:
+    """Transformers' JSON filter, signature and all. It keeps the schema's
+    key order and does not escape HTML characters (the built-in sorts keys
+    and turns < into \\u003c), and templates call it with keyword
+    arguments the built-in lacks: GLM writes tojson(ensure_ascii=False)."""
+    return json.dumps(
+        x,
+        ensure_ascii=ensure_ascii,
+        indent=indent,
+        separators=separators,
+        sort_keys=sort_keys,
+    )
 
 
 def strftime_now(format_str: str) -> str:

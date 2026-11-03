@@ -55,3 +55,19 @@ def test_tojson_filter_does_not_escape_html():
     env = build_template_env()
     template = env.from_string("{{ value | tojson }}")
     assert template.render(value={"a": "<b>"}) == '{"a": "<b>"}'
+
+
+def test_tojson_takes_transformers_keyword_arguments():
+    """GLM's template calls tojson(ensure_ascii=False); Transformers' filter
+    accepts it, so the faithful environment must too."""
+    env = build_template_env()
+    value = {"b": "é", "a": 1}
+    assert env.from_string("{{ v | tojson(ensure_ascii=False) }}").render(v=value) == (
+        '{"b": "é", "a": 1}'
+    )
+    assert env.from_string("{{ v | tojson(sort_keys=True) }}").render(v=value) == (
+        '{"a": 1, "b": "é"}'
+    )
+    assert env.from_string("{{ v | tojson(separators=(',', ':')) }}").render(
+        v=value
+    ) == '{"b":"é","a":1}'
