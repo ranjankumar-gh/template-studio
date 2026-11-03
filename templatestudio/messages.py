@@ -60,19 +60,21 @@ def validate_conversation(conversation: Conversation) -> list[str]:
             )
 
         content = message.get("content")
+        # An assistant turn that carries tool_calls legitimately has no
+        # content: Chapter 5's tool_call_message builds it with None, and
+        # client frameworks send "". An *empty* tool_calls list carries
+        # nothing, so it does not earn the exemption.
+        calls_only = role == "assistant" and bool(tool_calls)
         if content is None:
-            # An assistant turn that carries tool_calls legitimately has no
-            # content - Chapter 5's tool_call_message builds exactly that
-            # shape - so the content rule does not apply to it. An *empty*
-            # tool_calls list carries nothing, so it does not earn the
-            # exemption either.
-            if role != "assistant" or not tool_calls:
+            if not calls_only:
                 problems.append(f"message {i}: content is None")
         elif not isinstance(content, (str, list)):
             kind = type(content).__name__
             problems.append(f"message {i}: content must be str or list, got {kind}")
         elif isinstance(content, str) and not content.strip():
-            problems.append(f"message {i}: content is empty or whitespace")
+            # A tool that returned nothing still answered its call.
+            if not calls_only and role != "tool":
+                problems.append(f"message {i}: content is empty or whitespace")
         elif isinstance(content, list):
             # Multimodal content: validate the typed parts too (Chapter 7). Local import
             # avoids a circular dependency - multimodal imports from this module.

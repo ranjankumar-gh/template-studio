@@ -91,6 +91,28 @@ def test_user_turn_carrying_tool_calls_still_flagged():
     assert problems == ["message 0: content is None"]
 
 
+def test_empty_string_content_on_tool_call_turn_validates():
+    """Client frameworks send content "" beside tool_calls; that is the same
+    call-only shape as None and must pass."""
+    call = {**tool_call_message("get_temperature", {"location": "Paris"}), "content": ""}
+    assert validate_conversation([{"role": "user", "content": "Paris?"}, call]) == []
+
+
+def test_empty_tool_result_validates():
+    """A tool that returned nothing still answered its call."""
+    convo = [
+        {"role": "user", "content": "Clear the cache."},
+        tool_call_message("clear_cache", {}),
+        tool_result_message("clear_cache", ""),
+    ]
+    assert validate_conversation(convo) == []
+
+
+def test_empty_user_content_still_flagged():
+    problems = validate_conversation([{"role": "user", "content": "  "}])
+    assert problems == ["message 0: content is empty or whitespace"]
+
+
 def test_assistant_with_empty_tool_calls_list_flagged():
     """An empty tool_calls list carries nothing at all - it must not waive
     the content requirement the way a real tool_calls turn does."""
