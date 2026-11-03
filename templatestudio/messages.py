@@ -75,6 +75,14 @@ def validate_conversation(conversation: Conversation) -> list[str]:
             # A tool that returned nothing still answered its call.
             if not calls_only and role != "tool":
                 problems.append(f"message {i}: content is empty or whitespace")
+        elif isinstance(content, list):
+            # Multimodal content: validate the typed parts too (Chapter 7). Local import
+            # avoids a circular dependency - multimodal imports from this module.
+            from templatestudio.multimodal import validate_content_parts
+
+            problems.extend(
+                f"message {i}: {problem}" for problem in validate_content_parts(content)
+            )
 
     for i, message in enumerate(conversation):
         if message.get("role") == "system" and i != 0:
