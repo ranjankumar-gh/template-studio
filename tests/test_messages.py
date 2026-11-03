@@ -94,7 +94,8 @@ def test_user_turn_carrying_tool_calls_still_flagged():
 def test_empty_string_content_on_tool_call_turn_validates():
     """Client frameworks send content "" beside tool_calls; that is the same
     call-only shape as None and must pass."""
-    call = {**tool_call_message("get_temperature", {"location": "Paris"}), "content": ""}
+    call = tool_call_message("get_temperature", {"location": "Paris"})
+    call = {**call, "content": ""}
     assert validate_conversation([{"role": "user", "content": "Paris?"}, call]) == []
 
 
