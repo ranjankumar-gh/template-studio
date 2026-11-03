@@ -27,6 +27,19 @@ def test_strip_reasoning_handles_think_opened_in_the_prompt():
     assert strip_reasoning(generated) == "Paris."
 
 
+def test_strip_reasoning_never_shows_a_truncated_prompt_opened_block():
+    """max_tokens hit before </think>: the output is all reasoning, and it
+    must not reach the user as the answer."""
+    truncated = "The user's system prompt says never to apologize, so"
+    assert strip_reasoning(truncated, prompt_opened=True) == ""
+    assert strip_reasoning("ok\n</think>\n\nParis.", prompt_opened=True) == "Paris."
+
+
+def test_strip_reasoning_drops_an_unclosed_block_the_model_opened():
+    assert strip_reasoning("<think>still going and then cut") == ""
+    assert strip_reasoning("Paris.\n<think>an afterthought, cut") == "Paris.\n"
+
+
 def test_has_empty_think_blocks_detects_empty():
     assert has_empty_think_blocks("<|im_start|>assistant\n<think></think>\nhi") is True
 
