@@ -6,6 +6,8 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from jinja2.exceptions import TemplateError
+
 from templatestudio.messages import Conversation
 from templatestudio.render import render
 
@@ -77,5 +79,32 @@ def system_handling(
         return "own_turn"
     lo, hi = sorted((sys_at, user_at))
     if boundary.search(rendered[lo:hi]):
+        return "own_turn"
+    return "folded"
+
+
+def role_handling(
+    tokenizer: "PreTrainedTokenizerBase",
+    role: str,
+    boundary: re.Pattern[str] = _TURN_BOUNDARY,
+) -> str:
+    """system_handling for any role: 'own_turn', 'folded', 'dropped', or
+    'rejected' when the template raises on it. Probe `developer` this way
+    before you send one; the message model accepts the role, but a template
+    that does not know it can drop it without a word."""
+    probe: Conversation = [
+        {"role": role, "content": "ROLE_MARKER"},
+        {"role": "user", "content": "USER_MARKER"},
+    ]
+    try:
+        rendered = render(tokenizer, probe, add_generation_prompt=False)
+    except TemplateError:
+        return "rejected"
+    role_at = rendered.find("ROLE_MARKER")
+    user_at = rendered.find("USER_MARKER")
+    if role_at == -1:
+        return "dropped"
+    lo, hi = sorted((role_at, user_at))
+    if user_at == -1 or boundary.search(rendered[lo:hi]):
         return "own_turn"
     return "folded"

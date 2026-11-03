@@ -7,7 +7,7 @@ import re
 
 from conftest import CHATML, FakeTokenizer
 
-from templatestudio.anatomy import system_handling
+from templatestudio.anatomy import role_handling, system_handling
 
 # Llama 3: an explicit BOS preamble, header tags, and system in its own turn.
 LLAMA3 = (
@@ -100,3 +100,44 @@ def test_boundary_parameter_overrides_the_default_marker_set():
     tok = FakeTokenizer(exotic)
     assert system_handling(tok) == "folded"
     assert system_handling(tok, boundary=re.compile(r"\[\[TURN:")) == "own_turn"
+
+
+# Qwen3's shape for an unknown role: the loop renders the roles it knows and
+# skips the rest, so a developer message vanishes without an error.
+SKIPS_UNKNOWN = (
+    "{%- for message in messages %}"
+    "{%- if message['role'] in ['system', 'user', 'assistant'] %}"
+    "{{- '<|im_start|>' + message['role'] + '\n' + message['content'] }}"
+    "{{- '<|im_end|>\n' }}"
+    "{%- endif %}"
+    "{%- endfor %}"
+)
+
+# Gemma 3's shape: the template raises on a role it does not support.
+RAISES_UNKNOWN = (
+    "{%- for message in messages %}"
+    "{%- if message['role'] not in ['user', 'assistant'] %}"
+    "{{- raise_exception('Conversation roles must be user/assistant') }}"
+    "{%- endif %}"
+    "{{- '<start_of_turn>' + message['role'] + '\n' + message['content'] }}"
+    "{%- endfor %}"
+)
+
+
+def test_role_handling_reports_a_rendered_role_as_its_own_turn():
+    assert role_handling(FakeTokenizer(), "developer") == "own_turn"
+
+
+def test_role_handling_reports_a_skipped_role_as_dropped():
+    """The silent case Chapters 2 and 5 warn about."""
+    assert role_handling(FakeTokenizer(SKIPS_UNKNOWN), "developer") == "dropped"
+
+
+def test_role_handling_reports_a_raising_template_as_rejected():
+    assert role_handling(FakeTokenizer(RAISES_UNKNOWN), "developer") == "rejected"
+
+
+def test_role_handling_agrees_with_system_handling_on_system():
+    for template in (CHATML, LLAMA3, GEMMA3):
+        tok = FakeTokenizer(template)
+        assert role_handling(tok, "system") == system_handling(tok)
