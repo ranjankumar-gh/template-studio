@@ -99,3 +99,25 @@ def test_llama_cpp_matches_transformers_token_for_token(qwen_tokenizer):
     assert compare_token_renders(engines, convo) == []
     assert compare_token_renders(engines, convo, enable_thinking=False) == []
     assert_prefix_stable(engines[1].ids, convo)
+
+    # Tools travel as the request's tools field, so the server's tool path runs.
+    tools = [{"type": "function", "function": {
+        "name": "get_temperature",
+        "description": "Get the current temperature for a location.",
+        "parameters": {"type": "object",
+                       "properties": {"location": {"type": "string"}},
+                       "required": ["location"]},
+    }}]
+    tool_convo = [{"role": "user", "content": "What is the temperature in Paris?"}]
+    assert compare_token_renders(engines, tool_convo, tools=tools) == []
+
+    # Thinking off: every generation prompt ends in an empty think block the
+    # next request does not render - a 4-token tail, by design (Chapter 6).
+    def thinking_off(conversation):
+        return engines[1].ids(conversation, enable_thinking=False)
+
+    session = convo + [{"role": "assistant", "content": "It ships tomorrow."},
+                       {"role": "user", "content": "Thanks."}]
+    with pytest.raises(AssertionError):
+        assert_prefix_stable(thinking_off, session)
+    assert_prefix_stable(thinking_off, session, tail=4)
