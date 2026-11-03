@@ -60,9 +60,9 @@ def test_assert_valid_passes_on_good_conversation():
 
 
 def test_malformed_multimodal_part_flagged():
-    convo = [{"role": "user", "content": [{"type": "image"}]}]
+    convo = [{"role": "user", "content": [{"type": "hologram"}]}]
     problems = validate_conversation(convo)
-    assert any("missing 'url'" in p for p in problems)
+    assert any("unknown type 'hologram'" in p for p in problems)
 
 
 def test_canonical_tool_round_trip_validates():

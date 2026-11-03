@@ -50,21 +50,39 @@ def render_multimodal(
     )
 
 
-_PART_REQUIRED_FIELDS = {"text": "text", "image": "url", "video": "url", "audio": "url"}
+_MEDIA_TYPES = {"image", "video", "audio"}
 
 
 def validate_content_parts(content: list[dict]) -> list[str]:
-    """Validate a typed content list. Empty list means well-formed."""
+    """Validate a typed content list. Empty list means well-formed. A media
+    part may carry its source under its own type, url, path, or base64 -
+    the keys Transformers' loader reads - or under none of them, as a
+    placeholder for media handed to the processor separately. An OpenAI
+    image_url part is valid input; normalize it before the template sees it."""
     problems: list[str] = []
     for i, part in enumerate(content):
         part_type = part.get("type")
-        if part_type not in _PART_REQUIRED_FIELDS:
+        if part_type == "text":
+            if "text" not in part:
+                problems.append(f"part {i}: 'text' part missing 'text'")
+        elif part_type == "image_url":
+            source = part.get("image_url")
+            if not (isinstance(source, dict) and source.get("url")):
+                problems.append(f"part {i}: 'image_url' part missing image_url.url")
+        elif part_type not in _MEDIA_TYPES:
             problems.append(f"part {i}: unknown type {part_type!r}")
-            continue
-        required = _PART_REQUIRED_FIELDS[part_type]
-        if required not in part:
-            problems.append(f"part {i}: {part_type!r} part missing {required!r}")
     return problems
+
+
+def normalize_content_part(part: dict) -> dict:
+    """Rewrite a client's {"type": "image_url", "image_url": {"url": ...}}
+    into the {"type": "image", "url": ...} shape the templates expect, and
+    leave every other part alone. vLLM does this rewrite for you; a direct
+    apply_chat_template call does not, and a template that matches only
+    type "image" skips the part without a word."""
+    if part.get("type") != "image_url":
+        return part
+    return {"type": "image", "url": part["image_url"]["url"]}
 
 
 def count_media_parts(conversation: Conversation) -> int:

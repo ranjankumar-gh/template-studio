@@ -3,6 +3,7 @@ from __future__ import annotations
 from templatestudio.multimodal import (
     count_media_parts,
     image_part,
+    normalize_content_part,
     text_part,
     user_message,
     validate_content_parts,
@@ -19,9 +20,35 @@ def test_unknown_part_type_flagged():
     assert any("unknown type" in p for p in problems)
 
 
-def test_missing_required_field_flagged():
-    problems = validate_content_parts([{"type": "image"}])
-    assert any("missing 'url'" in p for p in problems)
+def test_missing_text_field_flagged():
+    problems = validate_content_parts([{"type": "text"}])
+    assert problems == ["part 0: 'text' part missing 'text'"]
+
+
+def test_every_media_shape_transformers_reads_passes():
+    """The loader reads the source under the type's own key, url, path, or
+    base64; a bare part is a placeholder for media passed separately."""
+    content = [
+        {"type": "image"},
+        {"type": "image", "image": "photo.jpg"},
+        {"type": "image", "url": "http://x/y.jpg"},
+        {"type": "image", "path": "/tmp/y.jpg"},
+        {"type": "image", "base64": "iVBORw0..."},
+        {"type": "video", "path": "/tmp/clip.mp4"},
+    ]
+    assert validate_content_parts(content) == []
+
+
+def test_openai_image_url_part_passes_and_normalizes():
+    part = {"type": "image_url", "image_url": {"url": "http://x/y.jpg"}}
+    assert validate_content_parts([part]) == []
+    assert normalize_content_part(part) == {"type": "image", "url": "http://x/y.jpg"}
+    assert normalize_content_part(text_part("hi")) == text_part("hi")
+
+
+def test_image_url_part_without_a_url_flagged():
+    problems = validate_content_parts([{"type": "image_url", "image_url": {}}])
+    assert problems == ["part 0: 'image_url' part missing image_url.url"]
 
 
 def test_count_media_parts_counts_only_media():
