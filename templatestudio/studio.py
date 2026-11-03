@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -26,6 +27,7 @@ class StudioReport:
     golden_failures: list[GoldenFailure] = field(default_factory=list)   # Ch11
     parity: list[ParityReport] = field(default_factory=list)    # Ch9
     pin_ok: bool = True                                         # Ch12
+    reviewed: list[str] = field(default_factory=list)  # passed on a recorded review
 
     @property
     def ok(self) -> bool:
@@ -48,12 +50,21 @@ def audit_template(
     pinned_fingerprint: str | None = None,
     probe: GoldenCase | None = None,
     engine: TokenRenderer | None = None,
+    reviewed: Mapping[str, Collection[str]] | None = None,
 ) -> StudioReport:
     """Run every Template Studio check that inspects a template and collect
-    the findings into one report."""
+    the findings into one report. reviewed maps a template fingerprint to
+    the heuristic findings someone read and accepted for exactly that source;
+    a changed template, or a finding not on the list, still fails."""
     report = StudioReport()
-    report.portability = lint_portability(template_source)          # Ch9
-    report.security = scan_template(template_source)                # Ch12
+    accepted = set((reviewed or {}).get(template_fingerprint(template_source), ()))
+    for findings, check in (
+        (report.portability, lint_portability),                     # Ch9
+        (report.security, scan_template),                           # Ch12
+    ):
+        for finding in check(template_source):
+            target = report.reviewed if finding in accepted else findings
+            target.append(finding)
     report.golden_failures = check_goldens(                         # Ch11
         tokenizer, goldens, engine=engine
     )
@@ -76,6 +87,8 @@ def ci_gate(report: StudioReport) -> int:
     """Print findings and return a process exit code: 0 clean, 1 failed."""
     if report.ok:
         print("template audit: PASS")
+        for finding in report.reviewed:
+            print(f"  [reviewed] {finding}")
         return 0
 
     print("template audit: FAIL")
