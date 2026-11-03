@@ -35,10 +35,13 @@ def request_points(conversation: Conversation) -> list[int]:
 
 
 def find_prefix_breaks(
-    render_ids: RenderIds, conversation: Conversation
+    render_ids: RenderIds, conversation: Conversation, tail: int = 0
 ) -> list[PrefixBreak]:
     """Render the prompt at each request point and report every consecutive
-    pair where the earlier prompt is not a token prefix of the later one."""
+    pair where the earlier prompt is not a token prefix of the later one.
+    tail tolerates a break in the last `tail` tokens of the earlier prompt:
+    a generation prompt the next request renders differently (Qwen3 with
+    thinking off) costs the last reply's recompute, not the conversation's."""
     points = request_points(conversation)
     prompts = [render_ids(conversation[:n]) for n in points]
     breaks: list[PrefixBreak] = []
@@ -50,16 +53,18 @@ def find_prefix_breaks(
             (i for i, (x, y) in enumerate(zip(a, b)) if x != y),
             min(len(a), len(b)),
         )
+        if position >= len(a) - tail:
+            continue
         breaks.append(PrefixBreak(earlier=n_a, later=n_b, position=position))
     return breaks
 
 
 def assert_prefix_stable(
-    render_ids: RenderIds, conversation: Conversation
+    render_ids: RenderIds, conversation: Conversation, tail: int = 0
 ) -> None:
     """Raise if any request in the conversation fails to extend the previous
-    one token for token."""
-    breaks = find_prefix_breaks(render_ids, conversation)
+    one token for token, outside an allowed generation-prompt tail."""
+    breaks = find_prefix_breaks(render_ids, conversation, tail)
     if breaks:
         first = breaks[0]
         raise AssertionError(

@@ -36,7 +36,10 @@ class TokenRenderer(Protocol):
     name: str
 
     def ids(
-        self, conversation: Conversation, **template_kwargs: Any
+        self,
+        conversation: Conversation,
+        tools: list[dict] | None = None,
+        **template_kwargs: Any,
     ) -> list[int]:
         ...
 
@@ -58,11 +61,15 @@ class TransformersTokens:
         self.tokenizer = tokenizer
 
     def ids(
-        self, conversation: Conversation, **template_kwargs: Any
+        self,
+        conversation: Conversation,
+        tools: list[dict] | None = None,
+        **template_kwargs: Any,
     ) -> list[int]:
         return _ids(
             self.tokenizer.apply_chat_template(
                 conversation,
+                tools=tools,
                 tokenize=True,
                 add_generation_prompt=True,
                 **template_kwargs,
@@ -83,9 +90,14 @@ class LlamaCppTokens:
         self.transport = transport
 
     def ids(
-        self, conversation: Conversation, **template_kwargs: Any
+        self,
+        conversation: Conversation,
+        tools: list[dict] | None = None,
+        **template_kwargs: Any,
     ) -> list[int]:
         body: dict[str, Any] = {"messages": conversation}
+        if tools:
+            body["tools"] = tools  # the request field, so the server's tool path runs
         if template_kwargs:
             body["chat_template_kwargs"] = template_kwargs
         rendered = self.transport(f"{self.base_url}/apply-template", body)
@@ -111,16 +123,53 @@ class VLLMTokens:
         self.transport = transport
 
     def ids(
-        self, conversation: Conversation, **template_kwargs: Any
+        self,
+        conversation: Conversation,
+        tools: list[dict] | None = None,
+        **template_kwargs: Any,
     ) -> list[int]:
         body: dict[str, Any] = {
             "model": self.model,
             "messages": conversation,
             "add_generation_prompt": True,
         }
+        if tools:
+            body["tools"] = tools
         if template_kwargs:
             body["chat_template_kwargs"] = template_kwargs
         reply = self.transport(f"{self.base_url}/tokenize", body)
+        return [int(t) for t in reply["tokens"]]
+
+
+class ClientCompletionTokens:
+    """The path a client takes when it renders the prompt itself and sends the
+    string to llama.cpp's /completion: the client's render, then /tokenize
+    with add_special on, which is how /completion tokenizes a prompt. A golden
+    checked through this path sees the doubled BOS the chat path cannot."""
+
+    name = "client + /completion"
+
+    def __init__(
+        self,
+        render: Callable[..., str],
+        base_url: str,
+        transport: Transport = http_post,
+    ) -> None:
+        self.render = render  # the client's own render, exactly as deployed
+        self.base_url = base_url.rstrip("/")
+        self.transport = transport
+
+    def ids(
+        self,
+        conversation: Conversation,
+        tools: list[dict] | None = None,
+        **template_kwargs: Any,
+    ) -> list[int]:
+        prompt = self.render(conversation, tools=tools, **template_kwargs)
+        reply = self.transport(
+            f"{self.base_url}/tokenize",
+            {"content": prompt, "add_special": True, "parse_special": True},
+        )
         return [int(t) for t in reply["tokens"]]
 
 
@@ -136,12 +185,15 @@ class TokenDivergence:
 def compare_token_renders(
     renderers: list[TokenRenderer],
     conversation: Conversation,
+    tools: list[dict] | None = None,
     **template_kwargs: Any,
 ) -> list[TokenDivergence]:
     """Render one conversation through every engine and report each engine
     whose token ids differ from the first (the reference). Ids are only
     comparable when the engines share a vocabulary - the same model."""
     assert_valid(conversation)
+    if tools is not None:  # as the request field, never a template kwarg
+        template_kwargs["tools"] = tools
     reference, *others = renderers
     expected = reference.ids(conversation, **template_kwargs)
     divergences: list[TokenDivergence] = []

@@ -3,6 +3,7 @@ from __future__ import annotations
 from templatestudio.jinja_env import render_template_string
 from templatestudio.prefix import assert_prefix_stable
 from templatestudio.serving import (
+    ClientCompletionTokens,
     LlamaCppTokens,
     VLLMTokens,
     compare_token_renders,
@@ -101,3 +102,34 @@ def test_prefix_check_runs_on_an_engine_adapter():
     convo = CONVO + [{"role": "assistant", "content": "hello"},
                      {"role": "user", "content": "bye"}]
     assert_prefix_stable(engine.ids, convo)
+
+
+TOOLS = [{"type": "function", "function": {"name": "get_order", "parameters": {}}}]
+
+
+def test_tools_travel_as_the_request_field_not_a_template_kwarg():
+    """llama.cpp and vLLM pick their tool handling from the request's tools;
+    inside chat_template_kwargs that path never runs."""
+    transport, calls = fake_llama_cpp(gguf_adds_bos=False)
+    LlamaCppTokens("http://x", transport).ids(CONVO, tools=TOOLS)
+    assert calls[0][1]["tools"] == TOOLS
+    assert "chat_template_kwargs" not in calls[0][1]
+
+    sent: list[dict] = []
+    VLLMTokens("http://y", "m", lambda u, b: sent.append(b) or fake_vllm(u, b)).ids(
+        CONVO, tools=TOOLS
+    )
+    assert sent[0]["tools"] == TOOLS
+
+
+def test_the_client_path_sees_the_doubled_bos_the_chat_path_cannot():
+    """Chapter 11, Incident 2: the client renders (with <s>) and /completion
+    tokenizes with add_special on, so a BOS-adding GGUF gets two."""
+    transport, _ = fake_llama_cpp(gguf_adds_bos=True)
+
+    def client_render(conversation, tools=None, **kwargs):
+        return render_template_string(TEMPLATE, conversation, **kwargs)
+
+    client = ClientCompletionTokens(client_render, "http://x", transport)
+    (div,) = compare_token_renders([Reference(), client], CONVO)
+    assert div.engine == "client + /completion" and div.position == 1

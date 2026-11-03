@@ -58,3 +58,30 @@ def test_a_turn_counter_breaks_the_prefix_at_its_first_token():
     assert breaks[0].position == len("turns: ")
     with pytest.raises(AssertionError, match="2 prefix break"):
         assert_prefix_stable(ids_for(STAMPED), CONVO)
+
+
+# Qwen3 with enable_thinking=False: the generation prompt ends in an empty think
+# block that the next request renders without.
+THINKING_OFF = (
+    "{% for m in messages %}"
+    "{{- '<|im_start|>' + m['role'] + '\n' + m['content'] + '<|im_end|>\n' }}"
+    "{%- endfor %}"
+    "{%- if add_generation_prompt %}"
+    "{{- '<|im_start|>assistant\n<think>\n\n</think>\n\n' }}"
+    "{%- endif %}"
+)
+TAIL = len("<think>\n\n</think>\n\n")  # characters are tokens in ids_for
+
+
+def test_a_generation_prompt_tail_breaks_the_prefix_by_design():
+    breaks = find_prefix_breaks(ids_for(THINKING_OFF), CONVO)
+    assert len(breaks) == 2
+    assert all(b.position >= 0 for b in breaks)
+
+
+def test_tail_tolerates_the_break_and_nothing_earlier():
+    assert find_prefix_breaks(ids_for(THINKING_OFF), CONVO, tail=TAIL) == []
+    assert_prefix_stable(ids_for(THINKING_OFF), CONVO, tail=TAIL)
+    # a break earlier in the prompt still fails, tail or not
+    with pytest.raises(AssertionError):
+        assert_prefix_stable(ids_for(STAMPED), CONVO, tail=TAIL)
