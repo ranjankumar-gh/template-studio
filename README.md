@@ -1,6 +1,6 @@
 # Template Studio
 
-The companion toolkit for [*The Chat Templates Handbook*](https://the-chat-templates-handbook.ranjankumar.in/)
+The companion toolkit for [*The Chat Templates Handbook*](https://chattemplates.ranjankumar.in/)
 by Ranjan Kumar. A render / validate / probe / diff / golden / security toolkit for LLM chat templates,
 built one module per chapter.
 

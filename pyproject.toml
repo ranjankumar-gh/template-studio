@@ -21,7 +21,7 @@ live = ["transformers>=4.51"]
 dev = ["pytest>=8"]
 
 [project.urls]
-Homepage = "https://the-chat-templates-handbook.ranjankumar.in/"
+Homepage = "https://chattemplates.ranjankumar.in/"
 Repository = "https://github.com/ranjankumar-gh/template-studio"
 
 [tool.setuptools.packages.find]
