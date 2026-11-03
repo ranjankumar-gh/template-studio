@@ -75,17 +75,24 @@ def compare_engines(
     return reports
 
 
-# Filters and constructs commonly absent from or divergent in non-CPython Jinja
-# engines. This is a portability heuristic, not any one engine's spec - engines
-# change, and a list keyed to a named engine goes stale the day it does. Treat a
-# hit as "verify on the real engine", not "broken".
-_RISKY_FILTERS = {
-    "reject", "select", "map", "groupby", "rejectattr", "selectattr"
-}
+# Filters commonly absent from non-CPython Jinja engines. This is a portability
+# heuristic, not any one engine's spec - engines change, and a list keyed to a
+# named engine goes stale the day it does. Treat a hit as "verify on the real
+# engine", not "broken".
+_RISKY_FILTERS = {"groupby"}
+
+# Filters that take a Jinja *test* by name. The filter can exist while the test
+# does not - the opening crash was reject("in", ...) on an engine that had
+# reject but no "in" test - so the lint reports the test, not the filter.
+_TEST_ARGUMENT = re.compile(
+    r"\|\s*(select|reject)\s*\(\s*['\"](\w+)['\"]"
+    r"|\|\s*(selectattr|rejectattr)\s*\(\s*['\"][^'\"]*['\"]\s*,\s*['\"](\w+)['\"]"
+)
 
 
 def lint_portability(template_source: str) -> list[str]:
-    """Flag template constructs unlikely to survive the move off CPython Jinja2."""
+    """Flag template constructs unlikely to survive the move off CPython
+    Jinja2."""
     problems: list[str] = []
     for match in re.finditer(r"\|\s*([a-zA-Z_]+)", template_source):
         filter_name = match.group(1)
@@ -94,4 +101,11 @@ def lint_portability(template_source: str) -> list[str]:
                 f"filter {filter_name!r} is a known cross-engine risk "
                 "(verify on the engine you deploy)"
             )
+    for match in _TEST_ARGUMENT.finditer(template_source):
+        filter_name = match.group(1) or match.group(3)
+        test = match.group(2) or match.group(4)
+        problems.append(
+            f"test {test!r} inside {filter_name!r}: engines implement different "
+            "test sets (verify on the engine you deploy)"
+        )
     return problems

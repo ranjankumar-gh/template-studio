@@ -28,22 +28,31 @@ def test_first_divergence_is_public_and_the_private_name_is_gone():
     assert not hasattr(parity, "_first_divergence")
 
 
-def test_lint_flags_risky_filter():
-    template = "{{ messages | reject('equalto', x) }}"
-    problems = lint_portability(template)
-    assert any("reject" in p for p in problems)
+def test_lint_flags_the_test_inside_the_opening_crash():
+    """Chapter 9's opening: reject existed; the "in" test it was handed did not."""
+    template = '{{ param_fields.keys() | reject("in", handled_keys) | list }}'
+    assert lint_portability(template) == [
+        "test 'in' inside 'reject': engines implement different test sets "
+        "(verify on the engine you deploy)"
+    ]
 
 
-def test_lint_message_is_not_keyed_to_a_named_engine():
-    """A portability heuristic keyed to one engine's name goes stale the day
-    that engine changes; ch09 now prints the engine-neutral wording."""
-    template = "{{ messages | selectattr('role', 'equalto', 'user') }}"
+def test_lint_reads_the_test_from_the_attr_filters_second_argument():
+    template = "{{ messages | selectattr('role', 'equalto', 'user') | list }}"
     problems = lint_portability(template)
     assert problems == [
-        "filter 'selectattr' is a known cross-engine risk "
+        "test 'equalto' inside 'selectattr': engines implement different test sets "
         "(verify on the engine you deploy)"
     ]
     assert "minja" not in problems[0]
+
+
+def test_lint_flags_groupby_and_leaves_map_alone():
+    assert lint_portability("{{ items | groupby('k') }}") == [
+        "filter 'groupby' is a known cross-engine risk "
+        "(verify on the engine you deploy)"
+    ]
+    assert lint_portability("{{ x | map(attribute='a') | list }}") == []
 
 
 def test_lint_passes_plain_template(chatml):
